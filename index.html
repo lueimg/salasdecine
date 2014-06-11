@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/json2/20121008/json2.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.0/backbone-min.js"></script>
+
+
+</head>
+<script>
+window.letras = ["","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u"];
+
+
+window.TdView = Backbone.View.extend({
+	events:{
+		"click":"AccionAsiento"
+	},
+	initialize:function(config){
+		this.col = config.columna
+		this.fil = config.fila
+	},
+	render:function(){
+		this.$el.html("<td col='"+ this.col+"' fil='"+this.fil+"'>"+letras[this.fil] + "-"+ this.col+"</td>");
+	},
+	AccionAsiento:function(){
+		console.log(this);
+	}
+});
+
+window.TableView = Backbone.View.extend({
+	initialize:function(config){
+		this.col = config.col
+		this.fil = config.fil
+		this.$el = config.$el
+
+	},
+	render:function(){
+		var col = parseInt(this.col);
+		var fil = parseInt(this.fil);
+		var tr = "";
+		
+		for(var i = 1 ; i <=fil ; i++){
+			tr += "<tr>"
+			for(var j = 1 ; j <=col ; j++){
+				var td = new TdView({columna:j,fila:i});
+				td.render();
+				tr +=td.$el.html();
+			}
+			tr +"</tr>";
+		}
+		
+		this.$el.html(tr);
+
+	}
+
+});
+
+window.SelectView = Backbone.View.extend({
+	events:{
+		"change":"cargarAsientos"
+	},
+	initialize:function(config){
+		var self = this;
+		this.$el = config.$el;
+
+		var data = $.getJSON("http://localhost/mori/salas.json?jsonp=?");
+		data.done(function(item){});
+		data.error(function(item){});
+		data.complete(function(item){
+			var salas  = JSON.parse( item.responseText );
+			salas.forEach(function(item){
+				
+				self.$el.append("<option value='"+ item.columas + "-"+ item.filas +"'>"+ item.nombre+"</option>")
+			});
+
+		});
+		
+	},
+	render:function(){},
+	cargarSelect:function(){},
+	cargarAsientos:function(){
+		var data = this.$el.val().split("-");
+		var col = data[0];
+		var fil = data[1];
+		var table = new TableView({$el:$("#salas") , col:col,fil:fil});
+		table.render();
+
+	}
+});
+
+
+
+$().ready(function(){
+window.select = new SelectView({ $el:$("#mostrarsalas")});
+
+
+});
+
+
+
+</script>
+<body>
+ <div id="select-salas">
+ 	<p>Mostrar: <select id="mostrarsalas"><option value="">Seleccione una sala</option></select></p>
+ </div>
+ <div id="tabla">
+ 	<table id="salas" border="1"></table>
+ </div>
+
+
+
+</body>
+</html>
