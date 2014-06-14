@@ -13,20 +13,42 @@
 <script>
 window.letras = ["","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u"];
 
+window.Td = Backbone.Model.extend();
+window.TdResevados = Backbone.Collection.extend({
+	model:Td
+});
 
-window.TdView = Backbone.View.extend({
-	events:{
-		"click":"AccionAsiento"
-	},
+window.Tr = Backbone.View.extend({
 	initialize:function(config){
-		this.col = config.columna
-		this.fil = config.fila
+		this.id = config.id
 	},
 	render:function(){
-		this.$el.html("<td col='"+ this.col+"' fil='"+this.fil+"'>"+letras[this.fil] + "-"+ this.col+"</td>");
+		this.$el.append("<tr id='"+this.id+"'></tr>");
+	}
+});
+
+
+window.TdView = Backbone.View.extend({
+	tagName:'td',
+	events:{
+		"click ":"AccionAsiento"
+	},
+	initialize:function(model){
+		this.model = model
+		
+	},
+	render:function(){
+		
+		var col = this.model.columna;
+		var fil = this.model.fila;
+		
+		this.$el.html("<div col='"+ col+"' fil='"+fil+"'>"+letras[fil] + "-"+ col+"</div>");
+		$("#salas").find("tr#"+fil).append(this.el);	
+
 	},
 	AccionAsiento:function(){
-		console.log(this);
+		
+		console.log(this.model);
 	}
 });
 
@@ -34,7 +56,7 @@ window.TableView = Backbone.View.extend({
 	initialize:function(config){
 		this.col = config.col
 		this.fil = config.fil
-		this.$el = config.$el
+		
 
 	},
 	render:function(){
@@ -43,17 +65,13 @@ window.TableView = Backbone.View.extend({
 		var tr = "";
 		
 		for(var i = 1 ; i <=fil ; i++){
-			tr += "<tr>"
+			var tr = new Tr({el:this.$el,id:i});
+			tr.render();
 			for(var j = 1 ; j <=col ; j++){
 				var td = new TdView({columna:j,fila:i});
-				td.render();
-				tr +=td.$el.html();
-			}
-			tr +"</tr>";
+				td.render();	
+			}	
 		}
-		
-		this.$el.html(tr);
-
 	}
 
 });
@@ -64,15 +82,12 @@ window.SelectView = Backbone.View.extend({
 	},
 	initialize:function(config){
 		var self = this;
-		this.$el = config.$el;
-
-		var data = $.getJSON("http://localhost/mori/salas.json?jsonp=?");
+		var data = $.getJSON("http://localhost/salasdecine/salas.json?jsonp=?");
 		data.done(function(item){});
 		data.error(function(item){});
 		data.complete(function(item){
 			var salas  = JSON.parse( item.responseText );
 			salas.forEach(function(item){
-				
 				self.$el.append("<option value='"+ item.columas + "-"+ item.filas +"'>"+ item.nombre+"</option>")
 			});
 
@@ -85,7 +100,8 @@ window.SelectView = Backbone.View.extend({
 		var data = this.$el.val().split("-");
 		var col = data[0];
 		var fil = data[1];
-		var table = new TableView({$el:$("#salas") , col:col,fil:fil});
+		$("#salas").html("");
+		var table = new TableView({ el:$("#salas") , col:col,fil:fil});
 		table.render();
 
 	}
@@ -94,7 +110,7 @@ window.SelectView = Backbone.View.extend({
 
 
 $().ready(function(){
-window.select = new SelectView({ $el:$("#mostrarsalas")});
+window.select = new SelectView({ el:$("#mostrarsalas")});
 
 
 });
