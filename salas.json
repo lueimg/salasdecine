@@ -1,7 +1,7 @@
 [
-{"nombre":"sala Premium","filas":8,"columas":10},
-{"nombre":"sala Free","filas":5,"columas":3},
-{"nombre":"sala Basica","filas":4,"columas":6},
-{"nombre":"sala Extreme","filas":12,"columas":10},
-{"nombre":"sala Standard","filas":7,"columas":8}
+{"nombre":"sala Premium","filas":8,"columnas":10},
+{"nombre":"sala Free","filas":5,"columnas":3},
+{"nombre":"sala Basica","filas":4,"columnas":6},
+{"nombre":"sala Extreme","filas":12,"columnas":10},
+{"nombre":"sala Standard","filas":7,"columnas":8}
 ]

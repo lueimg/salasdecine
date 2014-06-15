@@ -11,107 +11,143 @@
 
 </head>
 <script>
+//CLASES
+window.Cine = {}
+Cine.Views = {}
+Cine.Collections = {}
+Cine.Models = {}
+
+//INSTANCIAS
+window.views = {}
+window.models = {}
+window.collections = {}
+
+
 window.letras = ["","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u"];
 
-window.Td = Backbone.Model.extend();
-window.TdResevados = Backbone.Collection.extend({
-	model:Td
-});
-
-window.Tr = Backbone.View.extend({
-	initialize:function(config){
-		this.id = config.id
-	},
-	render:function(){
-		this.$el.append("<tr id='"+this.id+"'></tr>");
-	}
-});
-
-
-window.TdView = Backbone.View.extend({
-	tagName:'td',
+Cine.Views.Asiento = Backbone.View.extend({
+	tagName:"td",
 	events:{
-		"click ":"AccionAsiento"
+		"click":"AccionAsiento"
 	},
-	initialize:function(model){
-		this.model = model
-		
+	initialize:function(){
+
 	},
 	render:function(){
-		
-		var col = this.model.columna;
-		var fil = this.model.fila;
-		
-		this.$el.html("<div col='"+ col+"' fil='"+fil+"'>"+letras[fil] + "-"+ col+"</div>");
-		$("#salas").find("tr#"+fil).append(this.el);	
-
+		this.$el.html("<div>"+ this.model.get("fil") + this.model.get("col") + this.model.get("est") +"</div>");
 	},
 	AccionAsiento:function(){
 		
-		console.log(this.model);
-	}
-});
+		var estado = parseInt( this.model.get("est") , 10);
 
-window.TableView = Backbone.View.extend({
-	initialize:function(config){
-		this.col = config.col
-		this.fil = config.fil
+		if(estado  === 1)
+			estado = 0
+		else
+			estado = 1
+			
 		
 
+		this.model.set({est:estado});
+		this.render();
+		this.display()
 	},
-	render:function(){
-		var col = parseInt(this.col);
-		var fil = parseInt(this.fil);
-		var tr = "";
-		
-		for(var i = 1 ; i <=fil ; i++){
-			var tr = new Tr({el:this.$el,id:i});
-			tr.render();
-			for(var j = 1 ; j <=col ; j++){
-				var td = new TdView({columna:j,fila:i});
-				td.render();	
-			}	
+	display:function(){
+		var estado = parseInt(this.model.get("est"), 10);
+		var color = ''
+		if(estado === 1 ){
+			color = "green"
 		}
+		this.$el.css("background",color);
+	}
+});
+
+Cine.Collections.AsientosReservados = Backbone.Collection.extend();
+Cine.Collections.Salas = Backbone.Collection.extend({});
+Cine.Collections.Asientos = Backbone.Collection.extend({
+	initialize:function(){
+		//genero como una tabla detalle de asientos
+		var self = this
+		var data = $.getJSON("http://localhost/mori/salas.json?jsonp=?");
+		data.complete(function(item){
+			var salas  = JSON.parse( item.responseText );
+			salas.forEach(function(item){
+				var col = item.columnas
+				var fil = item.filas
+				var nom = item.nombre
+				var est = 0
+				var per = ''
+
+				for(var i = 1 ; i <=fil ; i++){
+					for(var j = 1 ; j <=col ; j++){
+						var data = {col:j,fil:i,nom:nom,est:0,per:''}
+						self.add(data);
+					}	
+				}
+			});
+
+		});
 	}
 
 });
 
-window.SelectView = Backbone.View.extend({
+Cine.Views.ListaSalas = Backbone.View.extend({
 	events:{
 		"change":"cargarAsientos"
 	},
 	initialize:function(config){
 		var self = this;
-		var data = $.getJSON("http://localhost/salasdecine/salas.json?jsonp=?");
-		data.done(function(item){});
-		data.error(function(item){});
+		var data = $.getJSON("http://localhost/mori/salas.json?jsonp=?");
+		var count = 0
+		this.collection.on("add",function(model){
+			self.$el.append("<option value='"+count+"'>"+ model.get("nombre") +"</option>")
+			count++;
+		});
 		data.complete(function(item){
 			var salas  = JSON.parse( item.responseText );
 			salas.forEach(function(item){
-				self.$el.append("<option value='"+ item.columas + "-"+ item.filas +"'>"+ item.nombre+"</option>")
+				self.collection.add(item);
 			});
 
 		});
-		
 	},
 	render:function(){},
-	cargarSelect:function(){},
 	cargarAsientos:function(){
-		var data = this.$el.val().split("-");
-		var col = data[0];
-		var fil = data[1];
-		$("#salas").html("");
-		var table = new TableView({ el:$("#salas") , col:col,fil:fil});
-		table.render();
+		$("#asientos").html("");
+	  	var index = this.$el.val()
+	  	var sala = collections.salas.at(index);
+	  	var fil = parseInt( sala.get("filas") , 10 );
+	  	for(var i = 1 ; i <=fil ; i++){
+	  		//AGREGAR UN TR POR CADA FILA
+	  		$("#asientos").append("<tr id='fil-"+i+"'></tr>");
+	  		//Obtengo los asientos por cada fila
+	  		var asientos = collections.asientos.where({nom:sala.get("nombre"),fil:i});
+		  		asientos.forEach(function(model){
+		  			var asiento = new Cine.Views.Asiento({model:model})
+		  			asiento.render();
+		  			$("#asientos tr#fil-"+i).append(asiento.$el[0]);
+		  			asiento.display();
+
+		  		});
+	  	}
+	  	
+
+	  	
+	  	
 
 	}
 });
 
 
-
 $().ready(function(){
-window.select = new SelectView({ el:$("#mostrarsalas")});
+collections.asientosReservados = new Cine.Collections.AsientosReservados();
+collections.asientos = new Cine.Collections.Asientos();
 
+collections.salas = new Cine.Collections.Salas();
+views.lista = new Cine.Views.ListaSalas({ 
+	el:$("#mostrarsalas"),
+	collection : collections.salas
+
+	 });
 
 });
 
@@ -123,7 +159,7 @@ window.select = new SelectView({ el:$("#mostrarsalas")});
  	<p>Mostrar: <select id="mostrarsalas"><option value="">Seleccione una sala</option></select></p>
  </div>
  <div id="tabla">
- 	<table id="salas" border="1"></table>
+ 	<table id="asientos" border="1"></table>
  </div>
 
 
