@@ -24,6 +24,15 @@ window.collections = {}
 
 
 window.letras = ["","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u"];
+Cine.Views.Guardar = Backbone.View.extend({
+	events:{"click":"guardar"},
+	initialize:function(){},
+	render:function(){},
+	guardar:function(){
+		localStorage.cine2 = JSON.stringify ( window.collections.asientos )
+	}
+
+});
 
 Cine.Views.Asiento = Backbone.View.extend({
 	tagName:"td",
@@ -45,8 +54,6 @@ Cine.Views.Asiento = Backbone.View.extend({
 		else
 			estado = 1
 			
-		
-
 		this.model.set({est:estado});
 		this.render();
 		this.display()
@@ -67,25 +74,35 @@ Cine.Collections.Asientos = Backbone.Collection.extend({
 	initialize:function(){
 		//genero como una tabla detalle de asientos
 		var self = this
-		var data = $.getJSON("http://localhost/mori/salas.json?jsonp=?");
-		data.complete(function(item){
-			var salas  = JSON.parse( item.responseText );
-			salas.forEach(function(item){
-				var col = item.columnas
-				var fil = item.filas
-				var nom = item.nombre
-				var est = 0
-				var per = ''
 
-				for(var i = 1 ; i <=fil ; i++){
-					for(var j = 1 ; j <=col ; j++){
-						var data = {col:j,fil:i,nom:nom,est:0,per:''}
-						self.add(data);
-					}	
-				}
+		if( localStorage.cine2 === undefined ){
+
+			var data = $.getJSON("http://localhost/mori/salas.json?jsonp=?");
+			data.complete(function(item){
+				var salas  = JSON.parse( item.responseText );
+				salas.forEach(function(item){
+					var col = item.columnas
+					var fil = item.filas
+					var nom = item.nombre
+					var est = 0
+					var per = ''
+
+					for(var i = 1 ; i <=fil ; i++){
+						for(var j = 1 ; j <=col ; j++){
+							var data = {col:j,fil:i,nom:nom,est:0,per:''}
+							self.add(data);
+						}	
+					}
+				});
+
 			});
+		}else{
+			var models = JSON.parse( localStorage.cine2 )
+			models.forEach(function(model){
+				self.add(model);
+			});
+		}
 
-		});
 	}
 
 });
@@ -147,7 +164,8 @@ views.lista = new Cine.Views.ListaSalas({
 	el:$("#mostrarsalas"),
 	collection : collections.salas
 
-	 });
+	});
+views.guardar = new Cine.Views.Guardar({el:$("button")});
 
 });
 
@@ -162,6 +180,8 @@ views.lista = new Cine.Views.ListaSalas({
  	<table id="asientos" border="1"></table>
  </div>
 
+
+<button>Gaurdar Datos</button>
 
 
 </body>
